@@ -33,6 +33,9 @@ else()
 endif()
 file(WRITE ${CURRENT_PACKAGES_DIR}/include/bzlib.h "${BZLIB_H}")
 
+# copy bz2.lib into libbz2.lib for python build
+configure_file(${CURRENT_PACKAGES_DIR}/lib/bz2.lib ${CURRENT_PACKAGES_DIR}/lib/libbz2.lib COPYONLY)
+configure_file(${CURRENT_PACKAGES_DIR}/debug/lib/bz2d.lib ${CURRENT_PACKAGES_DIR}/debug/lib/libbz2d.lib COPYONLY)
 
 file(COPY ${SOURCE_PATH}/LICENSE DESTINATION ${CURRENT_PACKAGES_DIR}/share/bzip2)
 file(RENAME ${CURRENT_PACKAGES_DIR}/share/bzip2/LICENSE ${CURRENT_PACKAGES_DIR}/share/bzip2/copyright)
