@@ -1,0 +1,60 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index d1a6457..b74fba6 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -77,6 +77,10 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8.0)
+ 
+ SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake) # for FindReadline.cmake
+ 
++IF(CMAKE_BUILD_TYPE STREQUAL Debug)
++    set(LIB_SUFFIX d)
++ENDIF(CMAKE_BUILD_TYPE STREQUAL Debug)
++
+ # external packages
+ FIND_PACKAGE( BZip2 )
+ FIND_PACKAGE( ZLIB )
+@@ -625,6 +629,17 @@ ADD_LIBRARY(pcreposix ${PCREPOSIX_HEADERS} ${PCREPOSIX_SOURCES})
+ SET(targets ${targets} pcreposix)
+ TARGET_LINK_LIBRARIES(pcreposix pcre)
+ 
++IF(MSVC AND INSTALL_MSVC_PDB)
++  SET_TARGET_PROPERTIES(pcre PROPERTIES
++        COMPILE_PDB_NAME_DEBUG pcred
++        COMPILE_PDB_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}"
++  )
++  SET_TARGET_PROPERTIES(pcreposix PROPERTIES 
++        COMPILE_PDB_NAME_DEBUG pcreposixd
++        COMPILE_PDB_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}"
++  )
++ENDIF(MSVC AND INSTALL_MSVC_PDB)
++
+ IF(MINGW AND NOT PCRE_STATIC)
+   IF(NON_STANDARD_LIB_PREFIX)
+     SET_TARGET_PROPERTIES(pcre pcreposix
+@@ -912,13 +927,17 @@ INSTALL(FILES ${man3} DESTINATION man/man3)
+ INSTALL(FILES ${html} DESTINATION share/doc/pcre/html)
+ 
+ IF(MSVC AND INSTALL_MSVC_PDB)
+-    INSTALL(FILES ${PROJECT_BINARY_DIR}/pcre.pdb
+-                  ${PROJECT_BINARY_DIR}/pcreposix.pdb
+-            DESTINATION bin
++    SET(PDB_DESTINATION bin)
++    IF(PCRE_STATIC)
++        SET(PDB_DESTINATION lib)
++    ENDIF(PCRE_STATIC)
++    INSTALL(FILES ${PROJECT_BINARY_DIR}/RelWithDebInfo/pcre.pdb
++                  ${PROJECT_BINARY_DIR}/RelWithDebInfo/pcreposix.pdb
++            DESTINATION ${PDB_DESTINATION}
+             CONFIGURATIONS RelWithDebInfo)
+-    INSTALL(FILES ${PROJECT_BINARY_DIR}/pcred.pdb
+-                  ${PROJECT_BINARY_DIR}/pcreposixd.pdb
+-            DESTINATION bin
++    INSTALL(FILES ${PROJECT_BINARY_DIR}/Debug/pcred.pdb
++                  ${PROJECT_BINARY_DIR}/Debug/pcreposixd.pdb
++            DESTINATION ${PDB_DESTINATION}
+             CONFIGURATIONS Debug)
+ ENDIF(MSVC AND INSTALL_MSVC_PDB)
+ 
+-- 
+2.10.2.windows.1
+
