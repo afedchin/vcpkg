@@ -1,0 +1,4 @@
+Source: cpluff
+Version: 0.1.4-0
+Description: C-Pluff, a plug-in framework for C http://www.c-pluff.org/
+Build-Depends: expat
