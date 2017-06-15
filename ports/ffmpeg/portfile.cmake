@@ -1,3 +1,4 @@
+
 if(VCPKG_LIBRARY_LINKAGE STREQUAL "static")
     message(STATUS "Building as static libraries not currently supported. Building as DLLs instead.")
     set(VCPKG_LIBRARY_LINKAGE "dynamic")
@@ -22,6 +23,11 @@ set(BASH ${MSYS_ROOT}/usr/bin/bash.exe)
 set(_csc_PROJECT_PATH ffmpeg)
 
 file(REMOVE_RECURSE ${CURRENT_BUILDTREES_DIR}/${TARGET_TRIPLET}-dbg ${CURRENT_BUILDTREES_DIR}/${TARGET_TRIPLET}-rel)
+
+if(VCPKG_CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
+    include(${CMAKE_CURRENT_LIST_DIR}/portfile-uwp.cmake)
+    return()
+endif()
 
 set(OPTIONS "--disable-ffmpeg --disable-ffprobe --disable-doc --enable-debug")
 set(OPTIONS "${OPTIONS} --enable-runtime-cpudetect")
