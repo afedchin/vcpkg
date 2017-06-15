@@ -14,6 +14,11 @@ vcpkg_download_distfile(ARCHIVE
     SHA512 a3dae5e4a6b93b1f5bf7435e8ab114a9be57252e9efc5dd444947d7a2d031b0819f34bcaeb35f60b5629a01b1238d738735a64db8f672be9690d3c80094511a4
 )
 vcpkg_extract_source_archive(${ARCHIVE})
+vcpkg_apply_patches(
+    SOURCE_PATH ${SOURCE_PATH}
+    PATCHES ${CMAKE_CURRENT_LIST_DIR}/0001-fix-exports.patch
+            ${CMAKE_CURRENT_LIST_DIR}/0002-fix-uwp.patch
+)
 
 set(LZO_STATIC OFF)
 set(LZO_SHARED OFF)
@@ -42,8 +47,8 @@ file(REMOVE_RECURSE ${CURRENT_PACKAGES_DIR}/debug/share)
 
 if(VCPKG_LIBRARY_LINKAGE STREQUAL dynamic)
     file(READ ${CURRENT_PACKAGES_DIR}/include/lzo/lzoconf.h LZO_CONFIG)
-    string(REPLACE "#  define __LZO_EXPORT1         /*empty*/"
-                   "#  define __LZO_EXPORT1         __declspec(dllimport)" LZO_CONFIG "${LZO_CONFIG}")
+    string(REPLACE "__declspec(dllexport)"
+                   "__declspec(dllimport)" LZO_CONFIG "${LZO_CONFIG}")
     file(WRITE ${CURRENT_PACKAGES_DIR}/include/lzo/lzoconf.h "${LZO_CONFIG}")
 endif()
 

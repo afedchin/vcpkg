@@ -1,0 +1,28 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 98c0a1a..92592f7 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -111,7 +111,6 @@ if(ENABLE_SHARED)
+         set_target_properties(lzo_shared_lib PROPERTIES ARCHIVE_OUTPUT_NAME lzo2_dllimport)
+     endif()
+     set_target_properties(lzo_shared_lib PROPERTIES SOVERSION 2 VERSION 2.0.0) # ABI version is 2.0.0 !
+-    set_target_properties(lzo_shared_lib PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+ endif()
+ 
+ # tests & examples
+diff --git a/include/lzo/lzoconf.h b/include/lzo/lzoconf.h
+index f9a8bdb..e775c02 100644
+--- a/include/lzo/lzoconf.h
++++ b/include/lzo/lzoconf.h
+@@ -218,7 +218,7 @@ LZO_COMPILE_TIME_ASSERT_HEADER(sizeof(char *)   == sizeof(lzo_bytep))
+ 
+ /* DLL export information */
+ #if !defined(__LZO_EXPORT1)
+-#  define __LZO_EXPORT1         /*empty*/
++#  define __LZO_EXPORT1         __declspec(dllexport)
+ #endif
+ #if !defined(__LZO_EXPORT2)
+ #  define __LZO_EXPORT2         /*empty*/
+-- 
+2.10.2.windows.1
+

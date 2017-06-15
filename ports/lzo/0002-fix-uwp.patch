@@ -1,0 +1,40 @@
+diff --git a/src/lzo_supp.h b/src/lzo_supp.h
+index f94a6b0..4a78062 100644
+--- a/src/lzo_supp.h
++++ b/src/lzo_supp.h
+@@ -3012,6 +3012,9 @@ static int lzo_pclock_read_clock_gettime_p_syscall(lzo_pclock_handle_p h, lzo_pc
+ #endif
+ static int lzo_pclock_read_getprocesstimes(lzo_pclock_handle_p h, lzo_pclock_p c)
+ {
++#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY != WINAPI_FAMILY_DESKTOP_APP)
++    return -1;
++#else
+     FILETIME ct, et, kt, ut;
+     lzo_uint64l_t ticks;
+     if (GetProcessTimes(GetCurrentProcess(), &ct, &et, &kt, &ut) == 0)
+@@ -3025,6 +3028,7 @@ static int lzo_pclock_read_getprocesstimes(lzo_pclock_handle_p h, lzo_pclock_p c
+     ticks = (ticks % 10000000ul) * 100u;
+     c->tv_nsec = LZO_STATIC_CAST(lzo_uint32l_t, ticks);
+     LZO_UNUSED(h); return 0;
++#endif
+ }
+ #endif
+ #if (HAVE_GETRUSAGE) && defined(RUSAGE_SELF)
+@@ -3080,6 +3084,9 @@ static int lzo_pclock_read_clock_gettime_t_syscall(lzo_pclock_handle_p h, lzo_pc
+ #endif
+ static int lzo_pclock_read_getthreadtimes(lzo_pclock_handle_p h, lzo_pclock_p c)
+ {
++#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY != WINAPI_FAMILY_DESKTOP_APP)
++    return -1;
++#else
+     FILETIME ct, et, kt, ut;
+     lzo_uint64l_t ticks;
+     if (GetThreadTimes(GetCurrentThread(), &ct, &et, &kt, &ut) == 0)
+@@ -3093,6 +3100,7 @@ static int lzo_pclock_read_getthreadtimes(lzo_pclock_handle_p h, lzo_pclock_p c)
+     ticks = (ticks % 10000000ul) * 100u;
+     c->tv_nsec = LZO_STATIC_CAST(lzo_uint32l_t, ticks);
+     LZO_UNUSED(h); return 0;
++#endif
+ }
+ #endif
+ LZOLIB_PUBLIC(int, lzo_pclock_open) (lzo_pclock_handle_p h, int mode)
