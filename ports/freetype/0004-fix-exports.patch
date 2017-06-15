@@ -1,0 +1,33 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index a894ada..8edef4c 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -119,10 +119,6 @@ endif ()
+ project(freetype)
+ 
+ 
+-if (WIN32 AND NOT MINGW AND BUILD_SHARED_LIBS)
+-  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+-endif ()
+-
+ # Disallow in-source builds
+ if ("${PROJECT_BINARY_DIR}" STREQUAL "${PROJECT_SOURCE_DIR}")
+   message(FATAL_ERROR
+diff --git a/include/freetype/config/ftoption.h b/include/freetype/config/ftoption.h
+index 1bf6e8f..3fccae6 100644
+--- a/include/freetype/config/ftoption.h
++++ b/include/freetype/config/ftoption.h
+@@ -312,6 +312,10 @@ FT_BEGIN_HEADER
+ /* #define FT_EXPORT(x)      extern x */
+ /* #define FT_EXPORT_DEF(x)  x */
+ 
++#ifdef WIN32
++#define FT_EXPORT(x) __declspec(dllexport) x
++#define FT_BASE(x) __declspec(dllexport) x
++#endif
+ 
+   /*************************************************************************/
+   /*                                                                       */
+-- 
+2.10.2.windows.1
+
