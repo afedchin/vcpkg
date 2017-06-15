@@ -92,6 +92,7 @@ target_compile_definitions(libxml2 PRIVATE
     -DHAVE_WIN32_THREADS
     -DHAVE_ZLIB_H
     -DHAVE_LZMA_H
+    -D_WINSOCK_DEPRECATED_NO_WARNINGS
 )
 if(NOT BUILD_SHARED_LIBS)
     target_compile_definitions(libxml2 PRIVATE -DLIBXML_STATIC)

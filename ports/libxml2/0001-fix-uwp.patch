@@ -1,0 +1,56 @@
+diff --git a/catalog.c b/catalog.c
+index 6dfdfbb..b47f945 100644
+--- a/catalog.c
++++ b/catalog.c
+@@ -3122,6 +3122,7 @@ xmlInitializeCatalog(void) {
+ 	if (catalogs == NULL)
+ #if defined(_WIN32) && defined(_MSC_VER)
+     {
++#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+ 		void* hmodule;
+ 		hmodule = GetModuleHandleA("libxml2.dll");
+ 		if (hmodule == NULL)
+@@ -3144,6 +3145,7 @@ xmlInitializeCatalog(void) {
+ 				}
+ 			}
+ 		}
++#endif
+ 		catalogs = XML_XML_DEFAULT_CATALOG;
+     }
+ #else
+diff --git a/xmlIO.c b/xmlIO.c
+index 1a79c09..8a4ebbd 100644
+--- a/xmlIO.c
++++ b/xmlIO.c
+@@ -733,7 +733,11 @@ xmlInitPlatformSpecificIo(void)
+ 
+     osvi.dwOSVersionInfoSize = sizeof(osvi);
+ 
++#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+     if(GetVersionEx(&osvi) && (osvi.dwPlatformId == VER_PLATFORM_WIN32_NT)) {
++#else
++    if (1) {
++#endif
+       xmlWrapStat = xmlWrapStatUtf8;
+       xmlWrapOpen = xmlWrapOpenUtf8;
+ #ifdef HAVE_ZLIB_H
+diff --git a/xmlmodule.c b/xmlmodule.c
+index 50ed666..be21bcc 100644
+--- a/xmlmodule.c
++++ b/xmlmodule.c
+@@ -308,7 +308,11 @@ xmlModulePlatformSymbol(void *handle, const char *name, void **symbol)
+ static void *
+ xmlModulePlatformOpen(const char *name)
+ {
+-    return LoadLibraryA(name);
++#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
++     return LoadLibraryA(name);
++#else
++     return LoadPackagedLibrary(name, 0);
++#endif
+ }
+ 
+ /*
+-- 
+2.10.2.windows.1
+
