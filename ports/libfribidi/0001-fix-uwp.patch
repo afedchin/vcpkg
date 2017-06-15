@@ -1,0 +1,262 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 30fb62d..37238fe 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -23,118 +23,120 @@ configure_file(
+ 
+ set(COMPRESSION 2)
+ 
+-add_executable(gen-unicode-version
+-  gen.tab/gen-unicode-version.c)
+-target_include_directories(gen-unicode-version PUBLIC
+-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/lib>
+-)
+-
+-target_compile_definitions(gen-unicode-version
+-  PRIVATE
+-  _CRT_SECURE_NO_WARNINGS
+-  _CRT_NONSTDC_NO_DEPRECATE
+-)
+-add_custom_target(gen-unicode
+-  COMMAND gen-unicode-version
+-  ${CMAKE_CURRENT_SOURCE_DIR}/gen.tab/unidata/ReadMe.txt >
+-  ${CMAKE_CURRENT_SOURCE_DIR}/lib/fribidi-unicode-version.h
+-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib
+-  BYPRODUCTS ${CMAKE_CURRENT_SOURCE_DIR}/lib/fribidi-unicode-version.h
++if (NOT CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
++  add_executable(gen-unicode-version
++    gen.tab/gen-unicode-version.c)
++  target_include_directories(gen-unicode-version PUBLIC
++    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/lib>
+   )
+ 
+-add_executable(gen-bidi-type-tab
+-  gen.tab/gen-bidi-type-tab.c
+-  gen.tab/packtab.h
+-  gen.tab/packtab.c)
+-target_include_directories(gen-bidi-type-tab PUBLIC
+-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/lib>
+-)
+-target_compile_definitions(gen-bidi-type-tab
+-  PRIVATE
+-  _CRT_SECURE_NO_WARNINGS
+-  _CRT_NONSTDC_NO_DEPRECATE
+-)
+-add_dependencies(gen-bidi-type-tab gen-unicode)
+-
+-add_custom_target(gen-derived-bidi-type
+-  COMMAND gen-bidi-type-tab
+-  ${COMPRESSION}
+-  ${CMAKE_CURRENT_SOURCE_DIR}/gen.tab/unidata/DerivedBidiClass.txt >
+-  ${CMAKE_CURRENT_SOURCE_DIR}/lib/derived_bidi-type.tab.i
+-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib
+-  BYPRODUCTS ${CMAKE_CURRENT_SOURCE_DIR}/lib/derived_bidi-type.tab.i)
+-
+-add_custom_target(gen-bidi-type
+-  COMMAND gen-bidi-type-tab
+-  ${COMPRESSION}
+-  ${CMAKE_CURRENT_SOURCE_DIR}/gen.tab/unidata/UnicodeData.txt >
+-  ${CMAKE_CURRENT_SOURCE_DIR}/lib/bidi-type.tab.i
+-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib
+-  BYPRODUCTS ${CMAKE_CURRENT_SOURCE_DIR}/lib/bidi-type.tab.i)
+-
+-add_executable(gen-joining-type-tab
+-  gen.tab/packtab.h
+-  gen.tab/packtab.c
+-  gen.tab/gen-joining-type-tab.c)
+-target_include_directories(gen-joining-type-tab PUBLIC
+-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/lib>
+-)
+-target_compile_definitions(gen-joining-type-tab
+-  PRIVATE
+-  _CRT_SECURE_NO_WARNINGS
+-  _CRT_NONSTDC_NO_DEPRECATE
+-)
+-add_dependencies(gen-joining-type-tab gen-unicode)
+-
+-add_custom_target(gen-joining-type
+-  COMMAND gen-joining-type-tab
+-  ${COMPRESSION}
+-  ${CMAKE_CURRENT_SOURCE_DIR}/gen.tab/unidata/UnicodeData.txt
+-  ${CMAKE_CURRENT_SOURCE_DIR}/gen.tab/unidata/ArabicShaping.txt >
+-  ${CMAKE_CURRENT_SOURCE_DIR}/lib/joining-type.tab.i
+-  BYPRODUCTS ${CMAKE_CURRENT_SOURCE_DIR}/lib/joining-type.tab.i)
+-
+-add_executable(gen-arabic-shaping-tab
+-  gen.tab/gen-arabic-shaping-tab.c)
+-target_include_directories(gen-arabic-shaping-tab PUBLIC
+-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/lib>
+-)
+-target_compile_definitions(gen-arabic-shaping-tab
+-  PRIVATE
+-  _CRT_SECURE_NO_WARNINGS
+-  _CRT_NONSTDC_NO_DEPRECATE
+-)
+-add_dependencies(gen-arabic-shaping-tab gen-unicode)
+-
+-add_custom_target(gen-arabic-shaping
+-  COMMAND gen-arabic-shaping-tab
+-  ${COMPRESSION}
+-  ${CMAKE_CURRENT_SOURCE_DIR}/gen.tab/unidata/UnicodeData.txt >
+-  ${CMAKE_CURRENT_SOURCE_DIR}/lib/arabic-shaping.tab.i
+-  BYPRODUCTS ${CMAKE_CURRENT_SOURCE_DIR}/lib/arabic-shaping.tab.i)
+-
+-add_executable(gen-mirroring-tab
+-  gen.tab/packtab.h
+-  gen.tab/packtab.c
+-  gen.tab/gen-mirroring-tab.c)
+-target_include_directories(gen-mirroring-tab PUBLIC
+-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/lib>
+-)
+-target_compile_definitions(gen-mirroring-tab
+-  PRIVATE
+-  _CRT_SECURE_NO_WARNINGS
+-  _CRT_NONSTDC_NO_DEPRECATE
+-)
+-add_dependencies(gen-mirroring-tab gen-unicode)
++  target_compile_definitions(gen-unicode-version
++    PRIVATE
++    _CRT_SECURE_NO_WARNINGS
++    _CRT_NONSTDC_NO_DEPRECATE
++  )
++  add_custom_target(gen-unicode
++    COMMAND gen-unicode-version
++    ${CMAKE_CURRENT_SOURCE_DIR}/gen.tab/unidata/ReadMe.txt >
++    ${CMAKE_CURRENT_SOURCE_DIR}/lib/fribidi-unicode-version.h
++    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib
++    BYPRODUCTS ${CMAKE_CURRENT_SOURCE_DIR}/lib/fribidi-unicode-version.h
++    )
++
++  add_executable(gen-bidi-type-tab
++    gen.tab/gen-bidi-type-tab.c
++    gen.tab/packtab.h
++    gen.tab/packtab.c)
++  target_include_directories(gen-bidi-type-tab PUBLIC
++    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/lib>
++  )
++  target_compile_definitions(gen-bidi-type-tab
++    PRIVATE
++    _CRT_SECURE_NO_WARNINGS
++    _CRT_NONSTDC_NO_DEPRECATE
++  )
++  add_dependencies(gen-bidi-type-tab gen-unicode)
++
++  add_custom_target(gen-derived-bidi-type
++    COMMAND gen-bidi-type-tab
++    ${COMPRESSION}
++    ${CMAKE_CURRENT_SOURCE_DIR}/gen.tab/unidata/DerivedBidiClass.txt >
++    ${CMAKE_CURRENT_SOURCE_DIR}/lib/derived_bidi-type.tab.i
++    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib
++    BYPRODUCTS ${CMAKE_CURRENT_SOURCE_DIR}/lib/derived_bidi-type.tab.i)
++
++  add_custom_target(gen-bidi-type
++    COMMAND gen-bidi-type-tab
++    ${COMPRESSION}
++    ${CMAKE_CURRENT_SOURCE_DIR}/gen.tab/unidata/UnicodeData.txt >
++    ${CMAKE_CURRENT_SOURCE_DIR}/lib/bidi-type.tab.i
++    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib
++    BYPRODUCTS ${CMAKE_CURRENT_SOURCE_DIR}/lib/bidi-type.tab.i)
++
++  add_executable(gen-joining-type-tab
++    gen.tab/packtab.h
++    gen.tab/packtab.c
++    gen.tab/gen-joining-type-tab.c)
++  target_include_directories(gen-joining-type-tab PUBLIC
++    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/lib>
++  )
++  target_compile_definitions(gen-joining-type-tab
++    PRIVATE
++    _CRT_SECURE_NO_WARNINGS
++    _CRT_NONSTDC_NO_DEPRECATE
++  )
++  add_dependencies(gen-joining-type-tab gen-unicode)
++
++  add_custom_target(gen-joining-type
++    COMMAND gen-joining-type-tab
++    ${COMPRESSION}
++    ${CMAKE_CURRENT_SOURCE_DIR}/gen.tab/unidata/UnicodeData.txt
++    ${CMAKE_CURRENT_SOURCE_DIR}/gen.tab/unidata/ArabicShaping.txt >
++    ${CMAKE_CURRENT_SOURCE_DIR}/lib/joining-type.tab.i
++    BYPRODUCTS ${CMAKE_CURRENT_SOURCE_DIR}/lib/joining-type.tab.i)
++
++  add_executable(gen-arabic-shaping-tab
++    gen.tab/gen-arabic-shaping-tab.c)
++  target_include_directories(gen-arabic-shaping-tab PUBLIC
++    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/lib>
++  )
++  target_compile_definitions(gen-arabic-shaping-tab
++    PRIVATE
++    _CRT_SECURE_NO_WARNINGS
++    _CRT_NONSTDC_NO_DEPRECATE
++  )
++  add_dependencies(gen-arabic-shaping-tab gen-unicode)
++
++  add_custom_target(gen-arabic-shaping
++    COMMAND gen-arabic-shaping-tab
++    ${COMPRESSION}
++    ${CMAKE_CURRENT_SOURCE_DIR}/gen.tab/unidata/UnicodeData.txt >
++    ${CMAKE_CURRENT_SOURCE_DIR}/lib/arabic-shaping.tab.i
++    BYPRODUCTS ${CMAKE_CURRENT_SOURCE_DIR}/lib/arabic-shaping.tab.i)
++
++  add_executable(gen-mirroring-tab
++    gen.tab/packtab.h
++    gen.tab/packtab.c
++    gen.tab/gen-mirroring-tab.c)
++  target_include_directories(gen-mirroring-tab PUBLIC
++    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/lib>
++  )
++  target_compile_definitions(gen-mirroring-tab
++    PRIVATE
++    _CRT_SECURE_NO_WARNINGS
++    _CRT_NONSTDC_NO_DEPRECATE
++  )
++  add_dependencies(gen-mirroring-tab gen-unicode)
+ 
+-add_custom_target(gen-mirroring
+-  COMMAND gen-mirroring-tab
+-  ${COMPRESSION}
+-  ${CMAKE_CURRENT_SOURCE_DIR}/gen.tab/unidata/BidiMirroring.txt >
+-  ${CMAKE_CURRENT_SOURCE_DIR}/lib/mirroring.tab.i
+-  BYPRODUCTS ${CMAKE_CURRENT_SOURCE_DIR}/lib/mirroring.tab.i)
++  add_custom_target(gen-mirroring
++    COMMAND gen-mirroring-tab
++    ${COMPRESSION}
++    ${CMAKE_CURRENT_SOURCE_DIR}/gen.tab/unidata/BidiMirroring.txt >
++    ${CMAKE_CURRENT_SOURCE_DIR}/lib/mirroring.tab.i
++    BYPRODUCTS ${CMAKE_CURRENT_SOURCE_DIR}/lib/mirroring.tab.i)
++endif()
+ 
+-add_library(fribidi STATIC
++add_library(fribidi
+   lib/bidi-types.h
+   lib/common.h
+   lib/debug.h
+@@ -182,14 +184,17 @@ target_compile_definitions(fribidi
+   _CRT_SECURE_NO_WARNINGS
+   _CRT_NONSTDC_NO_DEPRECATE
+ )
+-add_dependencies(fribidi
+-  gen-unicode
+-  gen-mirroring
+-  gen-arabic-shaping
+-  gen-joining-type
+-  # gen-derived-bidi-type
+-  gen-bidi-type
+-  )
++
++if (NOT CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
++  add_dependencies(fribidi
++      gen-unicode
++      gen-mirroring
++      gen-arabic-shaping
++      gen-joining-type
++      # gen-derived-bidi-type
++      gen-bidi-type
++      )
++endif()
+ 
+ include(CMakePackageConfigHelpers)
+ write_basic_package_version_file(
+-- 
+2.10.2.windows.1
+
