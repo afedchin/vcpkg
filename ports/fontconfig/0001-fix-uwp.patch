@@ -1,0 +1,117 @@
+diff --git a/src/fccache.c b/src/fccache.c
+index 6f3c68a..fd971cc 100644
+--- a/src/fccache.c
++++ b/src/fccache.c
+@@ -707,6 +707,8 @@ FcDirCacheMapFd (FcConfig *config, int fd, struct stat *fd_stat, struct stat *di
+ 	    cache = NULL;
+ #elif defined(_WIN32)
+ 	{
++#if !defined(WINAPI_FAMILY) || (WINAPI_FAMILY == WINAPI_FAMILY_DESKTOP_APP)
++
+ 	    HANDLE hFileMap;
+ 
+ 	    cache = NULL;
+@@ -718,6 +720,7 @@ FcDirCacheMapFd (FcConfig *config, int fd, struct stat *fd_stat, struct stat *di
+ 				       fd_stat->st_size);
+ 		CloseHandle (hFileMap);
+ 	    }
++#endif
+ 	}
+ #endif
+     }
+diff --git a/src/fcdefault.c b/src/fcdefault.c
+index 5afd7ec..c64bc42 100644
+--- a/src/fcdefault.c
++++ b/src/fcdefault.c
+@@ -117,7 +117,10 @@ retry:
+     {
+ #ifdef _WIN32
+ 	char buf[MAX_PATH+1];
+-
++#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY != WINAPI_FAMILY_DESKTOP_APP)
++    // FIXME
++    strcpy(prgname, "Windows 10 UWP App");
++#else
+ 	/* TODO This is ASCII-only; fix it. */
+ 	if (GetModuleFileNameA (GetModuleHandle (NULL), buf, sizeof (buf) / sizeof (buf[0])) > 0)
+ 	{
+@@ -140,6 +143,7 @@ retry:
+ 
+ 	    prgname = FcStrdup (p);
+ 	}
++#endif
+ #elif defined (HAVE_GETPROGNAME)
+ 	const char *q = getprogname ();
+ 	if (q)
+diff --git a/src/fcformat.c b/src/fcformat.c
+index 59f8681..4a74a4d 100644
+--- a/src/fcformat.c
++++ b/src/fcformat.c
+@@ -271,7 +271,7 @@ interpret_builtin (FcFormatContext *c,
+ 		   FcPattern       *pat,
+ 		   FcStrBuf        *buf)
+ {
+-    FcChar8       *new_str;
++    FcChar8       *new_str = NULL;
+     FcBool         ret;
+ 
+     if (!expect_char (c, '=') ||
+@@ -981,7 +981,7 @@ interpret_convert (FcFormatContext *c,
+ 		   int              start)
+ {
+     const FcChar8 *str;
+-    FcChar8       *new_str;
++    FcChar8       *new_str = NULL;
+     FcStrBuf       new_buf;
+     FcChar8        buf_static[8192];
+     FcBool         ret;
+diff --git a/src/fcint.h b/src/fcint.h
+index dad34c5..86c0811 100644
+--- a/src/fcint.h
++++ b/src/fcint.h
+@@ -70,6 +70,10 @@ extern pfnSHGetFolderPathA pSHGetFolderPathA;
+ #  define FC_DIR_SEPARATOR_S       "/"
+ #endif
+ 
++#if defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_DESKTOP_APP)
++#define getenv(x) NULL
++#endif
++
+ #ifdef PATH_MAX
+ #define FC_PATH_MAX	PATH_MAX
+ #else
+diff --git a/src/fcxml.c b/src/fcxml.c
+index 031a7da..ace4f78 100644
+--- a/src/fcxml.c
++++ b/src/fcxml.c
+@@ -2105,6 +2105,7 @@ FcParseDir (FcConfigParse *parse)
+ 	data = prefix;
+     }
+ #ifdef _WIN32
++#if !defined(WINAPI_FAMILY) || (WINAPI_FAMILY == WINAPI_FAMILY_DESKTOP_APP)
+     if (strcmp ((const char *) data, "CUSTOMFONTDIR") == 0)
+     {
+ 	FcChar8 *p;
+@@ -2152,6 +2153,7 @@ FcParseDir (FcConfigParse *parse)
+ 	strcat ((char *) data, "fonts");
+     }
+ #endif
++#endif
+     if (strlen ((char *) data) == 0)
+ 	FcConfigMessage (parse, FcSevereWarning, "empty font directory name ignored");
+     else if (!FcStrUsesHome (data) || FcConfigHome ())
+@@ -3244,7 +3246,10 @@ FcConfigParseAndLoad (FcConfig	    *config,
+     void	    *buf;
+ #endif
+ 
+-#ifdef _WIN32
++#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY != WINAPI_FAMILY_DESKTOP_APP)
++    pGetSystemWindowsDirectory = NULL;
++    pSHGetFolderPathA = NULL;
++#elif defined( _WIN32)
+     if (!pGetSystemWindowsDirectory)
+     {
+         HMODULE hk32 = GetModuleHandleA("kernel32.dll");
+-- 
+2.10.2.windows.1
+

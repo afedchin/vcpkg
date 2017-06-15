@@ -18,6 +18,10 @@ vcpkg_download_distfile(DIRENT_LICENSE
     SHA512 58c294f80b679252dbee9687ff6bda660fe1ed6f94506e1b9edc19358de98b274b25b3697bdcd34becb28a4f186c6d321a16ab616164e2fb378b37357fc71e4f)
 
 vcpkg_extract_source_archive(${ARCHIVE})
+vcpkg_apply_patches(
+    SOURCE_PATH ${SOURCE_PATH}
+    PATCHES ${CMAKE_CURRENT_LIST_DIR}/0001-fix-uwp.patch
+)
 file(COPY ${CMAKE_CURRENT_LIST_DIR}/CMakeLists.txt DESTINATION ${SOURCE_PATH})
 file(COPY ${DIRENT_H} DESTINATION ${SOURCE_PATH})
 file(RENAME ${SOURCE_PATH}/fontconfig-dirent.h ${SOURCE_PATH}/dirent.h)
