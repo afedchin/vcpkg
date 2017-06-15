@@ -20,16 +20,17 @@ find_program(NMAKE nmake)
 vcpkg_apply_patches(
     SOURCE_PATH ${SOURCE_PATH}/
     PATCHES ${CMAKE_CURRENT_LIST_DIR}/0001-Fix-makefile.patch
+            ${CMAKE_CURRENT_LIST_DIR}/0002-Fix-uwp.patch
 )
-
-set(SCRIPTS_DIR ${SOURCE_PATH}/win32)
 
 set(CONFIGURE_COMMAND_TEMPLATE cscript configure.js
     cruntime=@CRUNTIME@
+	buildUWP=@BUILDUWP@
     debug=@DEBUGMODE@
     prefix=@INSTALL_DIR@
     include=@INCLUDE_DIR@
     lib=@LIB_DIR@
+    crypto=@WITH_CRYPTO@
     bindir=$(PREFIX)\\tools\\
     sodir=$(PREFIX)\\bin\\
 )
@@ -53,9 +54,20 @@ set(DEBUGMODE no)
 set(LIB_DIR ${CURRENT_INSTALLED_DIR}/lib)
 set(INCLUDE_DIR ${CURRENT_INSTALLED_DIR}/include)
 set(INSTALL_DIR ${CURRENT_PACKAGES_DIR})
+set(BUILDUWP no)
+set(WITH_CRYPTO yes) 
 file(TO_NATIVE_PATH "${LIB_DIR}" LIB_DIR)
 file(TO_NATIVE_PATH "${INCLUDE_DIR}" INCLUDE_DIR)
 file(TO_NATIVE_PATH "${INSTALL_DIR}" INSTALL_DIR)
+
+SET(SCRIPTS_DIR ${SOURCE_PATH}/win32)
+if (VCPKG_CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
+  file(COPY ${CMAKE_CURRENT_LIST_DIR}/make-uwp.bat DESTINATION ${SCRIPTS_DIR})
+  file(COPY ${CMAKE_CURRENT_LIST_DIR}/setVSvars.bat DESTINATION ${SCRIPTS_DIR})
+  set(BUILDUWP yes)
+  set(WITH_CRYPTO no) 
+endif()
+
 string(CONFIGURE "${CONFIGURE_COMMAND_TEMPLATE}" CONFIGURE_COMMAND)
 vcpkg_execute_required_process(
     COMMAND ${CONFIGURE_COMMAND}
@@ -67,22 +79,32 @@ file(TO_NATIVE_PATH "${CURRENT_BUILDTREES_DIR}/${TARGET_TRIPLET}-rel" OUTDIR)
 file(MAKE_DIRECTORY "${OUTDIR}")
 message(STATUS "Configuring ${TARGET_TRIPLET}-rel done")
 
-message(STATUS "Building ${TARGET_TRIPLET}-rel")
-vcpkg_execute_required_process(
-    COMMAND ${NMAKE} /f Makefile.msvc rebuild OUTDIR=${OUTDIR}
-    WORKING_DIRECTORY ${SCRIPTS_DIR}
-    LOGNAME build-${TARGET_TRIPLET}-rel
-)
-message(STATUS "Building ${TARGET_TRIPLET}-rel done")
+if (NOT VCPKG_CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
+  message(STATUS "Building ${TARGET_TRIPLET}-rel")
+  vcpkg_execute_required_process(
+      COMMAND ${NMAKE} /f Makefile.msvc rebuild OUTDIR=${OUTDIR}
+      WORKING_DIRECTORY ${SCRIPTS_DIR}
+      LOGNAME build-${TARGET_TRIPLET}-rel
+  )
+  message(STATUS "Building ${TARGET_TRIPLET}-rel done")
 
-message(STATUS "Installing ${TARGET_TRIPLET}-rel")
-vcpkg_execute_required_process(
-    COMMAND ${NMAKE} /f Makefile.msvc install OUTDIR=${OUTDIR}
-    WORKING_DIRECTORY ${SCRIPTS_DIR}
-    LOGNAME install-${TARGET_TRIPLET}-rel
-)
-message(STATUS "Installing ${TARGET_TRIPLET}-rel done")
-
+  message(STATUS "Installing ${TARGET_TRIPLET}-rel")
+  vcpkg_execute_required_process(
+      COMMAND ${NMAKE} /f Makefile.msvc install OUTDIR=${OUTDIR}
+      WORKING_DIRECTORY ${SCRIPTS_DIR}
+      LOGNAME install-${TARGET_TRIPLET}-rel
+  )
+  message(STATUS "Installing ${TARGET_TRIPLET}-rel done")
+else()
+  message(STATUS "Building and installing ${TARGET_TRIPLET}-rel")
+  vcpkg_execute_required_process(
+      COMMAND ${SCRIPTS_DIR}/make-uwp.bat ${OUTDIR} ${UWP_PLATFORM}
+      WORKING_DIRECTORY ${SCRIPTS_DIR}
+      LOGNAME build-${TARGET_TRIPLET}-rel
+  )
+  message(STATUS "Building ${TARGET_TRIPLET}-rel done")
+  message(STATUS "Installing ${TARGET_TRIPLET}-rel done")
+endif()
 
 #
 # Debug
@@ -112,21 +134,33 @@ file(TO_NATIVE_PATH "${CURRENT_BUILDTREES_DIR}/${TARGET_TRIPLET}-dbg" OUTDIR)
 file(MAKE_DIRECTORY "${OUTDIR}")
 message(STATUS "Configuring ${TARGET_TRIPLET}-dbg done")
 
-message(STATUS "Building ${TARGET_TRIPLET}-dbg")
-vcpkg_execute_required_process(
-    COMMAND ${NMAKE} /f Makefile.msvc rebuild OUTDIR=${OUTDIR}
-    WORKING_DIRECTORY ${SCRIPTS_DIR}
-    LOGNAME build-${TARGET_TRIPLET}-dbg
-)
-message(STATUS "Building ${TARGET_TRIPLET}-dbg done")
+if (NOT VCPKG_CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
+  message(STATUS "Building ${TARGET_TRIPLET}-dbg")
+  vcpkg_execute_required_process(
+      COMMAND ${NMAKE} /f Makefile.msvc rebuild OUTDIR=${OUTDIR}
+      WORKING_DIRECTORY ${SCRIPTS_DIR}
+      LOGNAME build-${TARGET_TRIPLET}-dbg
+  )
+  message(STATUS "Building ${TARGET_TRIPLET}-dbg done")
 
-message(STATUS "Installing ${TARGET_TRIPLET}-dbg")
-vcpkg_execute_required_process(
-    COMMAND ${NMAKE} /f Makefile.msvc install OUTDIR=${OUTDIR}
-    WORKING_DIRECTORY ${SCRIPTS_DIR}
-    LOGNAME install-${TARGET_TRIPLET}-dbg
-)
-message(STATUS "Installing ${TARGET_TRIPLET}-dbg done")
+  message(STATUS "Installing ${TARGET_TRIPLET}-dbg")
+  vcpkg_execute_required_process(
+      COMMAND ${NMAKE} /f Makefile.msvc install OUTDIR=${OUTDIR}
+      WORKING_DIRECTORY ${SCRIPTS_DIR}
+      LOGNAME install-${TARGET_TRIPLET}-dbg
+  )
+  message(STATUS "Installing ${TARGET_TRIPLET}-dbg done")
+else()
+  message(STATUS "Building and installing ${TARGET_TRIPLET}-dbg")
+
+  vcpkg_execute_required_process(
+      COMMAND ${SCRIPTS_DIR}/make-uwp.bat ${OUTDIR} ${UWP_PLATFORM}
+      WORKING_DIRECTORY ${SCRIPTS_DIR}
+      LOGNAME build-${TARGET_TRIPLET}-dbg
+  )
+  message(STATUS "Building ${TARGET_TRIPLET}-dbg done")
+  message(STATUS "Installing ${TARGET_TRIPLET}-dbg done")
+endif()
 
 #
 # Cleanup

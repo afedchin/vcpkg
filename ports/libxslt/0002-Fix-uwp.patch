@@ -1,0 +1,167 @@
+diff --git a/libxslt/xsltlocale.c b/libxslt/xsltlocale.c
+index b5fe986..1741b4b 100644
+--- a/libxslt/xsltlocale.c
++++ b/libxslt/xsltlocale.c
+@@ -439,7 +439,11 @@ xsltLocaleStrcmp(xsltLocale locale, const xsltLocaleChar *str1, const xsltLocale
+     if (str1 == str2) return(0);
+     if (str1 == NULL) return(-1);
+     if (str2 == NULL) return(1);
++#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY != WINAPI_FAMILY_DESKTOP_APP)
++    ret = (CompareStringEx(LOCALE_NAME_INVARIANT, LINGUISTIC_IGNORECASE, str1, -1, str2,  -1, NULL, NULL, 0) == CSTR_EQUAL);
++#else
+     ret = CompareStringW(locale, 0, str1, -1, str2, -1);
++#endif
+     if (ret == 0) {
+         xsltTransformError(NULL, NULL, NULL, "xsltLocaleStrcmp : CompareStringW fail\n");
+         return(0);
+@@ -452,6 +456,70 @@ xsltLocaleStrcmp(xsltLocale locale, const xsltLocaleChar *str1, const xsltLocale
+ }
+ 
+ #ifdef XSLT_LOCALE_WINAPI
++#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY != WINAPI_FAMILY_DESKTOP_APP)
++BOOL CALLBACK
++xsltIterateSupportedLocales(LPWSTR pStr, DWORD dwFlags, LPARAM lparam) {
++    static int count = 0;
++    wchar_t iso639lang[XSLTMAX_ISO639LANGLEN + 1];
++    wchar_t iso3136ctry[XSLTMAX_ISO3166CNTRYLEN + 1];
++    wchar_t wresult[XSLTMAX_LANGTAGLEN + 1];
++    BOOL success = FALSE;
++    int size;
++
++    size = GetLocaleInfoEx(pStr, LOCALE_SISO639LANGNAME, iso639lang, XSLTMAX_ISO639LANGLEN + 1);
++    if (size > 0)
++    {
++        xsltRFC1766Info *p = xsltLocaleList + count;
++        p->lcid = LocaleNameToLCID(pStr, NULL);
++        size = GetLocaleInfoEx(pStr, LOCALE_SISO3166CTRYNAME, iso3136ctry, XSLTMAX_ISO3166CNTRYLEN + 1);
++        if (size > 0)
++        {
++            swprintf(wresult, XSLTMAX_LANGTAGLEN + 1, L"%s-%s", iso639lang, iso3136ctry);
++            auto l = wcslen(wresult) + 1;
++            size = WideCharToMultiByte(CP_UTF8, NULL, wresult, wcslen(wresult) + 1, NULL, 0, NULL, NULL);
++            if (size < XSLTMAX_LANGTAGLEN + 1)
++            {
++                size = WideCharToMultiByte(CP_UTF8, NULL, wresult, wcslen(wresult), (char*)p->tag, XSLTMAX_LANGTAGLEN + 1, NULL, NULL);
++                if (size > 0)
++                {
++                    success = TRUE;
++                }
++            }
++        }
++    }
++
++    if (success)
++    {
++        ++count; // success!
++    }
++end:
++    return((count < xsltLocaleListSize) ? TRUE : FALSE);
++}
++
++BOOL CALLBACK
++xsltCountSupportedLocales(LPWSTR pStr, DWORD dwFlags, LPARAM lparam) {
++    (void)pStr;
++    (void)dwFlags;
++    (void)lparam;
++
++    ++xsltLocaleListSize;
++    return(TRUE);
++}
++
++static void
++xsltEnumSupportedLocales(void) {
++    if (xsltLocaleListSize <= 0) {
++        size_t len;
++
++        EnumSystemLocalesEx(xsltCountSupportedLocales, LOCALE_ALL, NULL, NULL);
++
++        len = xsltLocaleListSize * sizeof(xsltRFC1766Info);
++        xsltLocaleList = (xsltRFC1766Info *)xmlMalloc(len);
++        memset(xsltLocaleList, 0, len);
++        EnumSystemLocalesEx(xsltIterateSupportedLocales, LOCALE_ALL, NULL, NULL);
++    }
++}
++#else
+ /**
+  * xsltCountSupportedLocales:
+  * @lcid: not used
+@@ -521,5 +589,5 @@ xsltEnumSupportedLocales(void) {
+     }
+     xmlRMutexUnlock(xsltLocaleMutex);
+ }
+-
++#endif // WINAPI_FAMILY
+ #endif /*def XSLT_LOCALE_WINAPI*/
+diff --git a/win32/Makefile.msvc b/win32/Makefile.msvc
+index b1fa754..e1d3e1d 100644
+--- a/win32/Makefile.msvc
++++ b/win32/Makefile.msvc
+@@ -59,6 +59,11 @@ CFLAGS = $(CFLAGS) /D_CRT_SECURE_NO_DEPRECATE /D_CRT_NONSTDC_NO_DEPRECATE
+ LD = link.exe
+ LDFLAGS = /nologo
+ LDFLAGS = $(LDFLAGS) /LIBPATH:$(BINDIR) /LIBPATH:$(LIBPREFIX)
++
++!if "$(BUILD_UWP)" == "1"
++LDFLAGS = $(LDFLAGS) /DYNAMICBASE "WindowsApp.lib" /APPCONTAINER /SUBSYSTEM:CONSOLE /ERRORREPORT:PROMPT
++!endif
++
+ # The libraries are needed for static builds (the makefile builds all tools and dlls)
+ LIBS = wsock32.lib libiconv.lib libcharset.lib
+ !if "$(DEBUG)" == "1"
+@@ -79,6 +84,9 @@ LDFLAGS = $(LDFLAGS) /DEBUG
+ CFLAGS = $(CFLAGS) /D "NDEBUG" /O2 
+ LDFLAGS = $(LDFLAGS) /DEBUG /OPT:REF /OPT:ICF
+ !endif
++!if "$(BUILD_UWP)" == "1"
++CFLAGS = $(CFLAGS)  /D "WINAPI_FAMILY=WINAPI_FAMILY_APP"
++!endif
+ 
+ # Libxslt object files.
+ XSLT_OBJS = $(XSLT_INTDIR)\attributes.obj\
+diff --git a/win32/configure.js b/win32/configure.js
+index 7f2f854..1627ace 100644
+--- a/win32/configure.js
++++ b/win32/configure.js
+@@ -53,6 +53,7 @@ var dirSep = "\\";
+ var compiler = "msvc";
+ var cruntime = "/MD";
+ var vcmanifest = false;
++var buildUWP = 0;
+ var buildDebug = 0;
+ var buildStatic = 0;
+ var buildPrefix = ".";
+@@ -112,6 +113,7 @@ function usage()
+ 	txt += "  compiler:   Compiler to be used [msvc|mingw] (" + compiler + ")\n";
+ 	txt += "  cruntime:   C-runtime compiler option (only msvc) (" + cruntime + ")\n";
+ 	txt += "  vcmanifest: Embed VC manifest (only msvc) (" + (vcmanifest? "yes" : "no") + ")\n";
++	txt += "  uwp:        Build Win10 UWP executables (" + (buildUWP? "yes" : "no")  + ")\n";
+ 	txt += "  debug:      Build unoptimised debug executables (" + (buildDebug? "yes" : "no")  + ")\n";
+ 	txt += "  static:     Link xsltproc statically to libxslt (" + (buildStatic? "yes" : "no")  + ")\n";
+ 	txt += "              Note: automatically enabled if cruntime is not /MD or /MDd\n";
+@@ -194,6 +196,7 @@ function discoverVersion()
+ 	vf.WriteLine("WITH_ZLIB=" + (withZlib? "1" : "0"));
+ 	vf.WriteLine("WITH_CRYPTO=" + (withCrypto? "1" : "0"));
+ 	vf.WriteLine("WITH_MODULES=" + (withModules? "1" : "0"));
++	vf.WriteLine("BUILD_UWP=" + (buildUWP? "1" : "0"));
+ 	vf.WriteLine("DEBUG=" + (buildDebug? "1" : "0"));
+ 	vf.WriteLine("STATIC=" + (buildStatic? "1" : "0"));
+ 	vf.WriteLine("PREFIX=" + buildPrefix);
+@@ -350,7 +353,9 @@ for (i = 0; (i < WScript.Arguments.length) && (error == 0); i++) {
+ 		else if (opt == "modules")
+ 			withModules = strToBool(arg.substring(opt.length + 1, arg.length));
+ 		else if (opt == "locale")
+-			withLocale = strToBool(arg.substring(opt.length + 1, arg.length));
++		    withLocale = strToBool(arg.substring(opt.length + 1, arg.length));
++		else if (opt == "buildUWP")
++		    buildUWP = strToBool(arg.substring(opt.length + 1, arg.length));
+ 		else if (opt == "compiler")
+ 			compiler = arg.substring(opt.length + 1, arg.length);
+  		else if (opt == "cruntime")
+@@ -493,6 +498,7 @@ txtOut += "          Compiler: " + compiler + "\n";
+ if (compiler == "msvc")
+ 	txtOut += "  C-Runtime option: " + cruntime + "\n";
+ 	txtOut += "    Embed Manifest: " + boolToStr(vcmanifest) + "\n";
++txtOut += "         Build UWP: " + boolToStr(buildUWP) + "\n";
+ txtOut += "     Debug symbols: " + boolToStr(buildDebug) + "\n";
+ txtOut += "   Static xsltproc: " + boolToStr(buildStatic) + "\n";
+ txtOut += "    Install prefix: " + buildPrefix + "\n";
