@@ -11,6 +11,11 @@ vcpkg_download_distfile(ARCHIVE_FILE
 )
 vcpkg_extract_source_archive(${ARCHIVE_FILE})
 
+vcpkg_apply_patches(
+    SOURCE_PATH ${SOURCE_PATH}
+    PATCHES ${CMAKE_CURRENT_LIST_DIR}/0001-Fix-UWP.patch
+)
+
 vcpkg_configure_cmake(
     SOURCE_PATH ${SOURCE_PATH}
     PREFER_NINJA
@@ -21,10 +26,9 @@ vcpkg_configure_cmake(
         -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON
 )
 
-
-vcpkg_install_cmake()
-file(INSTALL ${SOURCE_PATH}/LICENSE.rst DESTINATION ${CURRENT_PACKAGES_DIR}/share/fmt RENAME copyright)
-if(VCPKG_LIBRARY_LINKAGE STREQUAL dynamic)
+if(NOT VCPKG_CMAKE_SYSTEM_NAME MATCHES "WindowsStore")
+  vcpkg_install_cmake()
+  if(VCPKG_LIBRARY_LINKAGE STREQUAL dynamic)
     file(MAKE_DIRECTORY ${CURRENT_PACKAGES_DIR}/bin)
     file(MAKE_DIRECTORY ${CURRENT_PACKAGES_DIR}/debug/bin)
     file(RENAME ${CURRENT_PACKAGES_DIR}/lib/fmt.dll ${CURRENT_PACKAGES_DIR}/bin/fmt.dll)
@@ -34,21 +38,27 @@ if(VCPKG_LIBRARY_LINKAGE STREQUAL dynamic)
     file(READ ${CURRENT_PACKAGES_DIR}/include/fmt/format.h FMT_FORMAT_H)
     string(REPLACE "defined(FMT_SHARED)" "1" FMT_FORMAT_H "${FMT_FORMAT_H}")
     file(WRITE ${CURRENT_PACKAGES_DIR}/include/fmt/format.h "${FMT_FORMAT_H}")
-endif()
-file(REMOVE_RECURSE ${CURRENT_PACKAGES_DIR}/debug/include)
+  endif()
+  file(REMOVE_RECURSE ${CURRENT_PACKAGES_DIR}/debug/include)
 #file(REMOVE ${CURRENT_PACKAGES_DIR}/include/fmt/format.cc)
 #file(REMOVE ${CURRENT_PACKAGES_DIR}/include/fmt/ostream.cc)
-file(RENAME ${CURRENT_PACKAGES_DIR}/debug/share/fmt/fmt-targets-debug.cmake ${CURRENT_PACKAGES_DIR}/share/fmt/fmt-targets-debug.cmake)
-file(READ ${CURRENT_PACKAGES_DIR}/share/fmt/fmt-targets-debug.cmake FMT_DEBUG_MODULE)
-string(REPLACE "\${_IMPORT_PREFIX}" "\${_IMPORT_PREFIX}/debug" FMT_DEBUG_MODULE "${FMT_DEBUG_MODULE}")
-file(WRITE ${CURRENT_PACKAGES_DIR}/share/fmt/fmt-targets-debug.cmake "${FMT_DEBUG_MODULE}")
+  file(RENAME ${CURRENT_PACKAGES_DIR}/debug/share/fmt/fmt-targets-debug.cmake ${CURRENT_PACKAGES_DIR}/share/fmt/fmt-targets-debug.cmake)
+  file(READ ${CURRENT_PACKAGES_DIR}/share/fmt/fmt-targets-debug.cmake FMT_DEBUG_MODULE)
+  string(REPLACE "\${_IMPORT_PREFIX}" "\${_IMPORT_PREFIX}/debug" FMT_DEBUG_MODULE "${FMT_DEBUG_MODULE}")
+  file(WRITE ${CURRENT_PACKAGES_DIR}/share/fmt/fmt-targets-debug.cmake "${FMT_DEBUG_MODULE}")
 
-file(READ ${CURRENT_PACKAGES_DIR}/share/fmt/fmt-targets-debug.cmake FMT_DEBUG_MODULE)
-string(REPLACE "lib/fmt.dll" "bin/fmt.dll" FMT_DEBUG_MODULE ${FMT_DEBUG_MODULE})
-file(WRITE ${CURRENT_PACKAGES_DIR}/share/fmt/fmt-targets-debug.cmake "${FMT_DEBUG_MODULE}")
-file(READ ${CURRENT_PACKAGES_DIR}/share/fmt/fmt-targets-release.cmake FMT_RELEASE_MODULE)
-string(REPLACE "lib/fmt.dll" "bin/fmt.dll" FMT_RELEASE_MODULE ${FMT_RELEASE_MODULE})
-file(WRITE ${CURRENT_PACKAGES_DIR}/share/fmt/fmt-targets-release.cmake "${FMT_RELEASE_MODULE}")
-file(REMOVE_RECURSE ${CURRENT_PACKAGES_DIR}/debug/share)
+  file(READ ${CURRENT_PACKAGES_DIR}/share/fmt/fmt-targets-debug.cmake FMT_DEBUG_MODULE)
+  string(REPLACE "lib/fmt.dll" "bin/fmt.dll" FMT_DEBUG_MODULE ${FMT_DEBUG_MODULE})
+  file(WRITE ${CURRENT_PACKAGES_DIR}/share/fmt/fmt-targets-debug.cmake "${FMT_DEBUG_MODULE}")
+  file(READ ${CURRENT_PACKAGES_DIR}/share/fmt/fmt-targets-release.cmake FMT_RELEASE_MODULE)
+  string(REPLACE "lib/fmt.dll" "bin/fmt.dll" FMT_RELEASE_MODULE ${FMT_RELEASE_MODULE})
+  file(WRITE ${CURRENT_PACKAGES_DIR}/share/fmt/fmt-targets-release.cmake "${FMT_RELEASE_MODULE}")
+  file(REMOVE_RECURSE ${CURRENT_PACKAGES_DIR}/debug/share)
+else()
+  # Copy the fmt header files
+  file(INSTALL ${SOURCE_PATH}/fmt DESTINATION ${CURRENT_PACKAGES_DIR}/include FILES_MATCHING PATTERN "*.h")
+  file(INSTALL ${SOURCE_PATH}/fmt DESTINATION ${CURRENT_PACKAGES_DIR}/include FILES_MATCHING PATTERN "*.cc")
+endif()
 
+file(INSTALL ${SOURCE_PATH}/LICENSE.rst DESTINATION ${CURRENT_PACKAGES_DIR}/share/fmt RENAME copyright)
 vcpkg_copy_pdbs()
