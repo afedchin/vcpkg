@@ -21,7 +21,7 @@
 ## * [poco](https://github.com/Microsoft/vcpkg/blob/master/ports/poco/portfile.cmake)
 ## * [opencv](https://github.com/Microsoft/vcpkg/blob/master/ports/opencv/portfile.cmake)
 function(vcpkg_install_cmake)
-    cmake_parse_arguments(_bc "MSVC_64_TOOLSET;DISABLE_PARALLEL" "" "" ${ARGN})
+    cmake_parse_arguments(_bc "MSVC_64_TOOLSET;DISABLE_PARALLEL;" "RELEASE_CONFIG;DEBUG_CONFIG;" "" ${ARGN})
 
     set(MSVC_EXTRA_ARGS
         "/p:VCPkgLocalAppDataDisabled=true"
@@ -38,6 +38,12 @@ function(vcpkg_install_cmake)
     if (NOT _bc_DISABLE_PARALLEL)
         list(APPEND MSVC_EXTRA_ARGS "/m")
     endif()
+    if (NOT _bc_RELEASE_CONFIG)
+        set(_bc_RELEASE_CONFIG Release)
+    endif()
+    if (NOT _bc_DEBUG_CONFIG)
+        set(_bc_DEBUG_CONFIG Debug)
+    endif()
     
     if(EXISTS ${CURRENT_BUILDTREES_DIR}/${TARGET_TRIPLET}-rel/build.ninja)
         set(BUILD_ARGS -v) # verbose output
@@ -47,7 +53,7 @@ function(vcpkg_install_cmake)
 
     message(STATUS "Package ${TARGET_TRIPLET}-rel")
     vcpkg_execute_required_process(
-        COMMAND ${CMAKE_COMMAND} --build . --config Release --target install -- ${BUILD_ARGS}
+        COMMAND ${CMAKE_COMMAND} --build . --config ${_bc_RELEASE_CONFIG} --target install -- ${BUILD_ARGS}
         WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}/${TARGET_TRIPLET}-rel
         LOGNAME package-${TARGET_TRIPLET}-rel
     )
@@ -55,7 +61,7 @@ function(vcpkg_install_cmake)
 
     message(STATUS "Package ${TARGET_TRIPLET}-dbg")
     vcpkg_execute_required_process(
-        COMMAND ${CMAKE_COMMAND} --build . --config Debug --target install -- ${BUILD_ARGS}
+        COMMAND ${CMAKE_COMMAND} --build . --config ${_bc_DEBUG_CONFIG} --target install -- ${BUILD_ARGS}
         WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}/${TARGET_TRIPLET}-dbg
         LOGNAME package-${TARGET_TRIPLET}-dbg
     )
