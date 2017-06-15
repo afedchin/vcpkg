@@ -14,11 +14,11 @@ if(NOT VCPKG_USE_HEAD_VERSION) # these have been fixed upstream after 1.11.1
 	vcpkg_apply_patches(
 		SOURCE_PATH ${SOURCE_PATH}
 		PATCHES
-			${CMAKE_CURRENT_LIST_DIR}/replace_non-uwp_functions.patch
-			${CMAKE_CURRENT_LIST_DIR}/dont-assume-latin-1.patch
+			${CMAKE_CURRENT_LIST_DIR}/0001-fix-uwp.patch
 	)
 endif()
 
+set(VCPKG_LIBRARY_LINKAGE static)
 vcpkg_configure_cmake(
     SOURCE_PATH ${SOURCE_PATH}
     PREFER_NINJA
@@ -26,7 +26,7 @@ vcpkg_configure_cmake(
 		-DHAVE_VSNPRINTF=1		#  taglib/ConfigureChecks.cmake doesn't properly detect MSVC vsnprintf() on UWP
 )
 
-vcpkg_install_cmake()
+vcpkg_install_cmake(RELEASE_CONFIG RelWithDebInfo)
 
 # remove the debug/include files
 file(REMOVE_RECURSE ${CURRENT_PACKAGES_DIR}/debug/include)

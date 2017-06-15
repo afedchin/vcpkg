@@ -1,0 +1,83 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index a59efc9..487b094 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -39,13 +39,21 @@ option(BUILD_BINDINGS "Build the bindings" ON)
+ option(NO_ITUNES_HACKS "Disable workarounds for iTunes bugs" OFF)
+ 
+ add_definitions(-DHAVE_CONFIG_H)
++
++if(MSVC)
++  set(CMAKE_DEBUG_POSTFIX "d")
++  add_definitions(-D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE)
++endif()
++
+ set(TESTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tests/")
+ 
+ ## the following are directories where stuff will be installed to
+-set(LIB_SUFFIX "" CACHE STRING "Define suffix of directory name (32/64)")
++if(CMAKE_BUILD_TYPE STREQUAL Debug)
++set(LIB_SUFFIX "d" CACHE STRING "Define suffix of directory name (32/64)")
++endif()
+ set(EXEC_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}" CACHE PATH "Base directory for executables and libraries")
+ set(BIN_INSTALL_DIR "${EXEC_INSTALL_PREFIX}/bin" CACHE PATH "The subdirectory to the binaries prefix (default prefix/bin)")
+-set(LIB_INSTALL_DIR "${EXEC_INSTALL_PREFIX}/lib${LIB_SUFFIX}" CACHE PATH "The subdirectory relative to the install prefix where libraries will be installed (default is /lib${LIB_SUFFIX})")
++set(LIB_INSTALL_DIR "${EXEC_INSTALL_PREFIX}/lib" CACHE PATH "The subdirectory relative to the install prefix where libraries will be installed (default is /lib)")
+ set(INCLUDE_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/include" CACHE PATH "The subdirectory to the header prefix")
+ 
+ if(APPLE)
+diff --git a/taglib/CMakeLists.txt b/taglib/CMakeLists.txt
+index 000f793..173855b 100644
+--- a/taglib/CMakeLists.txt
++++ b/taglib/CMakeLists.txt
+@@ -344,6 +344,13 @@ set(tag_LIB_SRCS
+ 
+ add_library(tag ${tag_LIB_SRCS} ${tag_HDRS})
+ 
++if(MSVC)
++  set_target_properties(tag PROPERTIES COMPILE_PDB_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR} COMPILE_PDB_NAME tag COMPILE_PDB_NAME_DEBUG tagd)
++  install(FILES ${PROJECT_BINARY_DIR}/RelWithDebInfo/tag.pdb DESTINATION lib CONFIGURATIONS RelWithDebInfo)
++  install(FILES ${PROJECT_BINARY_DIR}/Release/tag.pdb DESTINATION lib CONFIGURATIONS Release)
++  install(FILES ${PROJECT_BINARY_DIR}/Debug/tagd.pdb DESTINATION lib CONFIGURATIONS Debug)
++endif(MSVC)
++
+ if(ZLIB_FOUND)
+   target_link_libraries(tag ${ZLIB_LIBRARIES})
+ endif()
+diff --git a/taglib/toolkit/tfilestream.cpp b/taglib/toolkit/tfilestream.cpp
+index 5205bae..3db0521 100644
+--- a/taglib/toolkit/tfilestream.cpp
++++ b/taglib/toolkit/tfilestream.cpp
+@@ -52,9 +52,14 @@ namespace
+     const DWORD access = readOnly ? GENERIC_READ : (GENERIC_READ | GENERIC_WRITE);
+ 
+     if(!path.wstr().empty())
+-      return CreateFileW(path.wstr().c_str(), access, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
++      return CreateFile2(path.wstr().c_str(), access, FILE_SHARE_READ, OPEN_EXISTING, NULL);
+     else if(!path.str().empty())
+-      return CreateFileA(path.str().c_str(), access, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
++    {
++      auto size = MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, path.str().data(), path.str().size(), NULL, 0);
++      std::wstring tmp(size, L'\0');
++      MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, path.str().data(), path.str().size(), &tmp[0], tmp.size());
++      return CreateFile2(tmp.c_str(), access, FILE_SHARE_READ, OPEN_EXISTING, NULL);
++    }
+     else
+       return InvalidFileHandle;
+   }
+@@ -437,9 +442,10 @@ long FileStream::length()
+ #ifdef _WIN32
+ 
+   SetLastError(NO_ERROR);
+-  const DWORD fileSize = GetFileSize(d->file, NULL);
++  LARGE_INTEGER fileSize;
++  GetFileSizeEx(d->file, &fileSize);
+   if(GetLastError() == NO_ERROR) {
+-    return static_cast<long>(fileSize);
++    return fileSize.QuadPart;
+   }
+   else {
+     debug("FileStream::length() -- Failed to get the file size.");
+-- 
+2.10.2.windows.1
+
