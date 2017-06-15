@@ -1,0 +1,36 @@
+diff --git a/libass/ass_directwrite.c b/libass/ass_directwrite.c
+index 45d2a2e..16e9cdf 100644
+--- a/libass/ass_directwrite.c
++++ b/libass/ass_directwrite.c
+@@ -22,8 +22,12 @@
+ 
+ #include <initguid.h>
+ #include <ole2.h>
+-#include <shobjidl.h>
+ 
++#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY != WINAPI_FAMILY_DESKTOP_APP)
++#include "ass_uwp.h"
++#else
++#include <shobjidl.h>
++#endif
+ #include "dwrite_c.h"
+ 
+ #include "ass_directwrite.h"
+@@ -743,12 +747,17 @@ ASS_FontProvider *ass_directwrite_add_provider(ASS_Library *lib,
+     DWriteCreateFactoryFn DWriteCreateFactoryPtr = NULL;
+     ProviderPrivate *priv = NULL;
+ 
++#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY != WINAPI_FAMILY_DESKTOP_APP)
++    HMODULE directwrite_lib = NULL;
++    DWriteCreateFactoryPtr = ass_uwp_get_dwritecreatefactory();
++#else
+     HMODULE directwrite_lib = LoadLibraryW(L"Dwrite.dll");
+     if (!directwrite_lib)
+         goto cleanup;
+ 
+     DWriteCreateFactoryPtr = (DWriteCreateFactoryFn)GetProcAddress(directwrite_lib,
+                                                                    "DWriteCreateFactory");
++#endif
+     if (!DWriteCreateFactoryPtr)
+         goto cleanup;
+ 

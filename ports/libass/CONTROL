@@ -1,0 +1,5 @@
+Source: libass
+Version:
+Description:
+Build-Depends: harfbuzz, freetype, libiconv, fontconfig, libfribidi
+
