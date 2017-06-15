@@ -1,0 +1,4 @@
+Source: kodi-deps
+Version: 18.0.0
+Build-Depends: zlib, openssl, curl, freetype, bzip2, sqlite3, pcre, tinyxml, taglib, libmicrohttpd, lzo, libssh, libfribidi, libxslt, libnfs, libass, ffmpeg, fmt, crossguid, cpluff, rapidjson, libcdio
+Description: A vcpkg port that builds the external dependencies for the Win10 UWP version of Kodi <https://github.com/xbmc/xbmc>
