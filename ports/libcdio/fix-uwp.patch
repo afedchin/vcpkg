@@ -1,0 +1,137 @@
+diff --git a/lib/driver/_cdio_generic.c b/lib/driver/_cdio_generic.c
+index 9e920bb..d48afdd 100644
+--- a/lib/driver/_cdio_generic.c
++++ b/lib/driver/_cdio_generic.c
+@@ -69,7 +69,7 @@
+   Eject media -- there's nothing to do here. We always return -2.
+   Should we also free resources?
+  */
+-int
++driver_return_code_t
+ cdio_generic_unimplemented_eject_media (void *p_user_data) {
+   /* Sort of a stub here. Perhaps log a message? */
+   return DRIVER_OP_UNSUPPORTED;
+@@ -78,7 +78,7 @@ cdio_generic_unimplemented_eject_media (void *p_user_data) {
+ /*!
+   Set the blocksize for subsequent reads.
+ */
+-int
++driver_return_code_t
+ cdio_generic_unimplemented_set_blocksize (void *p_user_data,
+                                           uint16_t i_blocksize) {
+   /* Sort of a stub here. Perhaps log a message? */
+@@ -88,7 +88,7 @@ cdio_generic_unimplemented_set_blocksize (void *p_user_data,
+ /*!
+   Set the drive speed.
+ */
+-int
++driver_return_code_t
+ cdio_generic_unimplemented_set_speed (void *p_user_data, int i_speed) {
+   /* Sort of a stub here. Perhaps log a message? */
+   return DRIVER_OP_UNSUPPORTED;
+@@ -101,6 +101,7 @@ cdio_generic_unimplemented_set_speed (void *p_user_data, int i_speed) {
+ void
+ cdio_generic_free (void *p_user_data)
+ {
++#if defined(WINAPI_FAMILY) && WINAPI_FAMILY != WINAPI_FAMILY_APP
+   generic_img_private_t *p_env = p_user_data;
+ 
+   if (NULL == p_env) return;
+@@ -119,6 +120,7 @@ cdio_generic_free (void *p_user_data)
+     free (p_env->scsi_tuple);
+ 
+   free (p_env);
++#endif
+ }
+ 
+ /*!
+@@ -127,6 +129,9 @@ cdio_generic_free (void *p_user_data)
+ bool
+ cdio_generic_init (void *user_data, int open_flags)
+ {
++#if defined(WINAPI_FAMILY) && WINAPI_FAMILY == WINAPI_FAMILY_APP
++  return false;
++#else
+   generic_img_private_t *p_env = user_data;
+   if (p_env->init) {
+     cdio_warn ("init called more than once");
+@@ -148,13 +153,14 @@ cdio_generic_init (void *user_data, int open_flags)
+   p_env->b_cdtext_error = false;
+   p_env->u_joliet_level = 0;  /* Assume no Joliet extensions initally */
+   return true;
++#endif
+ }
+ 
+ /*!
+    Reads a single form1 sector from cd device into data starting
+    from lsn.
+  */
+-driver_return_code_t
++int
+ cdio_generic_read_form1_sector (void * user_data, void *data, lsn_t lsn)
+ {
+   if (0 > cdio_generic_lseek(user_data, CDIO_CD_FRAMESIZE*lsn, SEEK_SET))
+@@ -170,8 +176,12 @@ cdio_generic_read_form1_sector (void * user_data, void *data, lsn_t lsn)
+ off_t
+ cdio_generic_lseek (void *user_data, off_t offset, int whence)
+ {
++#if defined(WINAPI_FAMILY) && WINAPI_FAMILY == WINAPI_FAMILY_APP
++  return -1;
++#else
+   generic_img_private_t *p_env = user_data;
+   return CDIO_LSEEK(p_env->fd, offset, whence);
++#endif
+ }
+ 
+ /*!
+@@ -182,8 +192,12 @@ cdio_generic_lseek (void *user_data, off_t offset, int whence)
+ ssize_t
+ cdio_generic_read (void *user_data, void *buf, size_t size)
+ {
++#if defined(WINAPI_FAMILY) && WINAPI_FAMILY == WINAPI_FAMILY_APP
++  return -1;
++#else
+   generic_img_private_t *p_env = user_data;
+   return read(p_env->fd, buf, size);
++#endif
+ }
+ 
+ /*!
+diff --git a/lib/driver/image/bincue.c b/lib/driver/image/bincue.c
+index c7fa629..c3c3757 100644
+--- a/lib/driver/image/bincue.c
++++ b/lib/driver/image/bincue.c
+@@ -990,7 +990,7 @@ _read_mode2_sectors_bincue (void *p_user_data, void *data, lsn_t lsn,
+ static inline void Win32Glob(const char* pattern, const char* szCurPath, char ***drives, unsigned int *num_files)
+ {
+   char szPath[MAX_PATH];
+-  WIN32_FIND_DATAA ffd;
++  WIN32_FIND_DATA ffd;
+   HANDLE hFind;
+   BOOL bFound;
+ 
+diff --git a/lib/iso9660/iso9660.c b/lib/iso9660/iso9660.c
+index cc5e50c..974a283 100644
+--- a/lib/iso9660/iso9660.c
++++ b/lib/iso9660/iso9660.c
+@@ -75,6 +75,9 @@ static time_t
+ timegm(struct tm *tm)
+ {
+   time_t ret;
++#if defined(WINAPI_FAMILY) && WINAPI_FAMILY == WINAPI_FAMILY_APP
++  ret = mktime(tm);
++#else
+   char *tz;
+ 
+   tz = getenv("TZ");
+@@ -86,6 +89,7 @@ timegm(struct tm *tm)
+   else
+     unsetenv("TZ");
+   tzset();
++#endif
+   return ret;
+ }
+ #endif
+-- 
+2.10.2.windows.1
+
