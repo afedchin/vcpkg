@@ -14,6 +14,7 @@ vcpkg_apply_patches(
             ${CMAKE_CURRENT_LIST_DIR}/0002-Add-CONFIG_INSTALL_PATH-option.patch
             ${CMAKE_CURRENT_LIST_DIR}/0003-Fix-UWP.patch
             ${CMAKE_CURRENT_LIST_DIR}/0004-fix-exports.patch
+            ${CMAKE_CURRENT_LIST_DIR}/0005-fix-deprecated-api.patch
 )
 
 vcpkg_configure_cmake(
