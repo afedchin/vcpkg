@@ -17,11 +17,8 @@ vcpkg_extract_source_archive(${ARCHIVE})
 
 vcpkg_apply_patches(
     SOURCE_PATH ${SOURCE_PATH}
-    PATCHES ${CMAKE_CURRENT_LIST_DIR}/0001-xbmc.patch
+    PATCHES ${CMAKE_CURRENT_LIST_DIR}/0001-kodi-fix.patch
 )
-
-file(COPY ${CMAKE_CURRENT_LIST_DIR}/CMakeLists.txt DESTINATION ${SOURCE_PATH})
-file(COPY ${CMAKE_CURRENT_LIST_DIR}/win32/ DESTINATION ${SOURCE_PATH}/libcpluff/win32/)
 
 vcpkg_configure_cmake(
     SOURCE_PATH ${SOURCE_PATH}
@@ -34,7 +31,11 @@ vcpkg_configure_cmake(
 vcpkg_install_cmake()
 
 file(REMOVE_RECURSE ${CURRENT_PACKAGES_DIR}/debug/include)
+file(COPY ${CURRENT_PACKAGES_DIR}/debug/lib/cmake DESTINATION ${CURRENT_PACKAGES_DIR}/share/cpluff)
+file(COPY ${CURRENT_PACKAGES_DIR}/lib/cmake DESTINATION ${CURRENT_PACKAGES_DIR}/share/cpluff)
+file(REMOVE_RECURSE ${CURRENT_PACKAGES_DIR}/debug/lib/cmake)
+file(REMOVE_RECURSE ${CURRENT_PACKAGES_DIR}/lib/cmake)
 
 # Handle copyright
 file(COPY ${SOURCE_PATH}/COPYRIGHT.txt DESTINATION ${CURRENT_PACKAGES_DIR}/share/cpluff)
-file(RENAME ${CURRENT_PACKAGES_DIR}/share/cpluff//COPYRIGHT.txt ${CURRENT_PACKAGES_DIR}/share/cpluff/copyright)
+file(RENAME ${CURRENT_PACKAGES_DIR}/share/cpluff/COPYRIGHT.txt ${CURRENT_PACKAGES_DIR}/share/cpluff/copyright)
