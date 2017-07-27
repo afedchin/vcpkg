@@ -5,11 +5,11 @@ if(VCPKG_LIBRARY_LINKAGE STREQUAL "static")
 endif()
 
 include(vcpkg_common_functions)
-set(SOURCE_PATH ${CURRENT_BUILDTREES_DIR}/src/ffmpeg-3.2.4)
+set(SOURCE_PATH ${CURRENT_BUILDTREES_DIR}/src/FFmpeg-3.3.2-Leia-Alpha-1)
 vcpkg_download_distfile(ARCHIVE
-    URLS "http://ffmpeg.org/releases/ffmpeg-3.2.4.tar.bz2"
-    FILENAME "ffmpeg-3.2.4.tar.bz2"
-    SHA512 ba5004d0f2659faa139c7dbf2f0fc6bab1d4e017d919f4ac271a5d2e8e4a3478909176e3a4d1ad33ddf2f62ab28dd9e00ce9be1399efb7cb3276dde79134cdaa
+    URLS "https://github.com/xbmc/FFmpeg/archive/3.3.2-Leia-Alpha-1.tar.gz"
+    FILENAME "ffmpeg-3.3.2-Leia-Alpha-1.tar.gz"
+    SHA512 356c71aeca9eda11fd0d76d447cb005e1ff7041017df9bae2570f7486c32bc9091c26d2e38896c41b26654b1cacbdf47c69368e69654a9f2223e08bdd9117dcb
 )
 vcpkg_extract_source_archive(${ARCHIVE})
 
